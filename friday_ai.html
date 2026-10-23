@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ПЯТНИЦА (Friday AI) — Локальный голосовой ИИ-оператор Windows</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Tone.js for subtle futuristic UI audio feedback -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Manrope', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            cyber: {
+              bg: '#07080d',
+              card: '#0f121d',
+              purple: '#7c3aed',
+              indigo: '#4f46e5',
+              cyan: '#06b6d4',
+              amber: '#f59e0b',
+              emerald: '#10b981'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #07080d;
+      color: #f8fafc;
+      overflow-x: hidden;
+    }
+
+    /* Animated cyber grid background */
+    .cyber-grid {
+      background-size: 48px 48px;
+      background-image: 
+        linear-gradient(to right, rgba(124, 58, 237, 0.07) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(6, 182, 212, 0.07) 1px, transparent 1px);
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 25%, black 40%, transparent 100%);
+    }
+
+    /* Glassmorphism cards */
+    .glass-card {
+      background: rgba(15, 18, 29, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(124, 58, 237, 0.22);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(6, 182, 212, 0.55);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 45px -15px rgba(124, 58, 237, 0.3);
+    }
+
+    /* Scroll reveal animations */
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px) scale(0.98);
+      transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Core Reactor / Equalizer Rings */
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes spinReverse {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 35px rgba(124, 58, 237, 0.5), inset 0 0 25px rgba(6, 182, 212, 0.4); }
+      50% { box-shadow: 0 0 70px rgba(6, 182, 212, 0.85), inset 0 0 40px rgba(124, 58, 237, 0.7); }
+    }
+
+    .reactor-ring-1 { animation: spinSlow 18s linear infinite; }
+    .reactor-ring-2 { animation: spinReverse 12s linear infinite; }
+    .reactor-core { animation: pulseGlow 3.5s ease-in-out infinite; }
+
+    /* Audio wave bars */
+    .wave-bar {
+      transition: height 0.15s ease;
+    }
+
+    /* Custom range slider */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #4f46e5, #06b6d4);
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 26px;
+      width: 26px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 4px solid #7c3aed;
+      margin-top: -8px;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(124, 58, 237, 0.9);
+      transition: transform 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+  </style>
+</head>
+<body class="selection:bg-purple-600 selection:text-white">
+
+  <!-- Ambient Glow Orbs -->
+  <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+    <div class="cyber-grid absolute inset-0"></div>
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-purple-600/20 rounded-full blur-[130px]"></div>
+    <div class="absolute top-1/3 -right-32 w-96 h-96 bg-cyan-500/15 rounded-full blur-[140px]"></div>
+    <div class="absolute bottom-0 left-1/4 w-96 h-96 bg-indigo-600/15 rounded-full blur-[150px]"></div>
+  </div>
+
+  <!-- HEADER / NAVBAR -->
+  <header class="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-[#07080d]/80 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <!-- Brand + Accelerator Badge -->
+      <div class="flex items-center gap-4">
+        <a href="#" class="flex items-center gap-3 group">
+          <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:scale-105 transition">
+            <i class="fa-solid fa-microphone-lines text-white text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-xl tracking-tight text-white">ПЯТНИЦА</span>
+              <span class="text-[11px] font-mono uppercase px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">v0.4 MVP</span>
+            </div>
+            <p class="text-xs text-slate-400 font-mono">LOCAL WINDOWS AI AGENT</p>
+          </div>
+        </a>
+
+        <!-- Accelerator 102 Pill -->
+        <div class="hidden xl:flex items-center gap-2 pl-4 ml-2 border-l border-white/10">
+          <i class="fa-solid fa-gear text-amber-400 animate-spin" style="animation-duration: 10s;"></i>
+          <span class="text-xs font-bold tracking-wider uppercase text-slate-200">АКСЕЛЕРАТОР 102</span>
+          <span class="text-xs text-slate-500">•</span>
+          <span class="text-xs font-medium text-cyan-400">ПУТП / УВШЭУ</span>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-300">
+        <a href="#simulator" class="hover:text-cyan-400 transition">Живое Демо</a>
+        <a href="#comparison" class="hover:text-cyan-400 transition">Проблема vs Решение</a>
+        <a href="#features" class="hover:text-cyan-400 transition">Что автоматизирует</a>
+        <a href="#calculator" class="hover:text-cyan-400 transition">Экономия B2B</a>
+        <a href="#pitch-qr" class="hover:text-amber-400 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-qrcode text-amber-400"></i> QR Предзащиты
+        </a>
+      </nav>
+
+      <!-- CTA Button -->
+      <div class="flex items-center gap-3">
+        <a href="#simulator" class="px-5 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white shadow-lg shadow-purple-600/25 transition flex items-center gap-2">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Запустить ИИ</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="relative z-10 pt-32 pb-20 lg:pt-36 lg:pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      
+      <!-- Left Column: Copy & Value Prop -->
+      <div class="lg:col-span-7 space-y-6">
+        <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-purple-950/60 border border-purple-500/40 text-purple-200 text-xs sm:text-sm font-semibold">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>Локальное ядро Ollama + Qwen 2.5 • 0 байт трафика в сеть</span>
+        </div>
+
+        <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.08] text-white">
+          Голосовой ИИ-оператор твоего <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-cyan-400 to-indigo-400">Windows</span>, как у Тони Старка
+        </h1>
+
+        <p class="text-lg sm:text-xl text-slate-300 leading-relaxed max-w-2xl font-normal">
+          <strong class="text-white font-bold">«Пятница»</strong> — настольная программа, которая работает прямо на видеокарте вашего компьютера без интернета: мгновенно находит договоры на дисках, запускает софт голосом и бережет коммерческую тайну (100% соответствие 152-ФЗ).
+        </p>
+
+        <!-- Primary Action Buttons -->
+        <div class="flex flex-wrap items-center gap-4 pt-2">
+          <button onclick="triggerQuickVoiceDemo()" class="px-7 py-4 rounded-2xl font-extrabold text-base bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:brightness-110 text-white shadow-xl shadow-purple-600/30 transition transform active:scale-95 flex items-center gap-3">
+            <i class="fa-solid fa-microphone text-lg animate-pulse"></i>
+            <span>Произнести голосовую команду</span>
+          </button>
+
+          <a href="#pitch-qr" class="px-6 py-4 rounded-2xl font-bold text-base glass-card text-slate-200 hover:text-white flex items-center gap-2.5">
+            <i class="fa-brands fa-windows text-cyan-400 text-lg"></i>
+            <span>Скачать .exe прототип (TRL 4)</span>
+          </a>
+        </div>
+
+        <!-- Key Telemetry Counters -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6">
+          <div class="glass-card p-4 rounded-2xl">
+            <p class="font-mono text-2xl sm:text-3xl font-extrabold text-cyan-400">0 Байт</p>
+            <p class="text-xs text-slate-400 mt-1">Утечек в облако (152-ФЗ)</p>
+          </div>
+          <div class="glass-card p-4 rounded-2xl">
+            <p class="font-mono text-2xl sm:text-3xl font-extrabold text-purple-400">0.2 сек</p>
+            <p class="text-xs text-slate-400 mt-1">Поиск файлов и ярлыков</p>
+          </div>
+          <div class="glass-card p-4 rounded-2xl">
+            <p class="font-mono text-2xl sm:text-3xl font-extrabold text-amber-400">4.8 ГБ</p>
+            <p class="text-xs text-slate-400 mt-1">Видеопамяти (4-bit сжатие)</p>
+          </div>
+          <div class="glass-card p-4 rounded-2xl">
+            <p class="font-mono text-2xl sm:text-3xl font-extrabold text-emerald-400">92%+</p>
+            <p class="text-xs text-slate-400 mt-1">Точность вызовов ОС</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Interactive HUD Stark Reactor Core -->
+      <div class="lg:col-span-5 flex flex-col items-center justify-center">
+        <div class="relative w-80 h-80 sm:w-96 sm:h-96 flex items-center justify-center">
+          <!-- Outer rotating HUD ring -->
+          <div class="reactor-ring-1 absolute inset-0 rounded-full border-2 border-dashed border-purple-500/40"></div>
+          <!-- Middle rotating HUD ring -->
+          <div class="reactor-ring-2 absolute inset-6 rounded-full border border-cyan-400/30"></div>
+          <div class="absolute inset-12 rounded-full border border-indigo-500/20"></div>
+
+          <!-- Center Interactive Voice Core -->
+          <button id="stark-core-btn" onclick="triggerQuickVoiceDemo()" class="reactor-core relative z-20 w-48 h-48 rounded-full bg-gradient-to-b from-[#13182b] to-[#090b14] border-2 border-cyan-400/60 flex flex-col items-center justify-center p-6 text-center cursor-pointer group focus:outline-none">
+            <span id="core-status-badge" class="text-[10px] font-mono uppercase tracking-widest text-cyan-400 mb-2">ЯДРО АКТИВНО • OLLAMA</span>
+            
+            <!-- Dynamic Equalizer Bars -->
+            <div id="equalizer-bars" class="flex items-center justify-center gap-1.5 h-12 my-1">
+              <div class="wave-bar w-1.5 h-4 bg-purple-400 rounded-full"></div>
+              <div class="wave-bar w-1.5 h-8 bg-cyan-400 rounded-full"></div>
+              <div class="wave-bar w-1.5 h-11 bg-indigo-400 rounded-full"></div>
+              <div class="wave-bar w-1.5 h-6 bg-cyan-300 rounded-full"></div>
+              <div class="wave-bar w-1.5 h-10 bg-purple-500 rounded-full"></div>
+              <div class="wave-bar w-1.5 h-5 bg-cyan-400 rounded-full"></div>
+              <div class="wave-bar w-1.5 h-7 bg-indigo-400 rounded-full"></div>
+            </div>
+
+            <span id="core-action-label" class="text-xs font-bold text-white group-hover:text-cyan-300 transition mt-2">
+              Нажми для теста голоса
+            </span>
+          </button>
+
+          <!-- Floating Telemetry Badges around the Reactor -->
+          <div class="absolute -top-2 right-2 glass-card px-3.5 py-2 rounded-xl text-xs font-mono flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>CPU: <strong id="hud-cpu">14%</strong></span>
+          </div>
+          <div class="absolute bottom-4 -left-4 glass-card px-3.5 py-2 rounded-xl text-xs font-mono flex items-center gap-2">
+            <i class="fa-solid fa-memory text-purple-400"></i>
+            <span>VRAM: <strong>4.8 / 8 GB</strong></span>
+          </div>
+          <div class="absolute bottom-2 right-0 glass-card px-3.5 py-2 rounded-xl text-xs font-mono flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved text-cyan-400"></i>
+            <span>152-ФЗ: <strong class="text-emerald-400">ISOLATED</strong></span>
+          </div>
+        </div>
+
+        <!-- Live Voice Bubble Output -->
+        <div id="hero-voice-bubble" class="mt-4 w-full max-w-md glass-card rounded-2xl p-4 border-l-4 border-l-cyan-400">
+          <div class="flex items-center justify-between text-xs font-mono text-slate-400 mb-1">
+            <span><i class="fa-solid fa-terminal text-cyan-400 mr-1.5"></i>ПОСЛЕДНЯЯ КОМАНДА В ТРЕЕ WINDOWS</span>
+            <span id="bubble-latency" class="text-emerald-400">1.4 сек</span>
+          </div>
+          <p id="bubble-text" class="text-sm font-semibold text-white">
+            «Пятница, найди договор поставки на диске D и запусти VS Code»
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- INTERACTIVE SIMULATOR: REACT LOOP IN ACTION -->
+  <section id="simulator" class="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto reveal">
+    <div class="text-center max-w-3xl mx-auto mb-12">
+      <span class="px-3.5 py-1 rounded-full text-xs font-mono uppercase bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+        Интерактивный симулятор архитектуры ReAct
+      </span>
+      <h2 class="text-3xl sm:text-5xl font-extrabold text-white mt-4">
+        Проверьте, как «Пятница» думает и управляет ПК
+      </h2>
+      <p class="text-slate-400 mt-3 text-lg">
+        Выберите любой реальный сценарий ниже — вы увидите, как локальная нейросеть строит план (<code class="text-purple-400">&lt;think&gt;</code>) и вызывает системные инструменты Windows без участия интернета.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+      
+      <!-- Scenario Selector Buttons (Left 5 cols) -->
+      <div class="lg:col-span-5 flex flex-col justify-between gap-4">
+        <button onclick="runScenario(0)" id="scen-btn-0" class="scenario-btn text-left p-5 rounded-2xl glass-card border-2 border-cyan-400 bg-cyan-950/20 transition">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono uppercase px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300">Кейс 1 • Офис и 152-ФЗ</span>
+            <span class="text-xs font-mono text-emerald-400">0.18 сек</span>
+          </div>
+          <h3 class="font-bold text-lg text-white">«Найди договор на диске D и открой рабочую среду»</h3>
+          <p class="text-sm text-slate-400 mt-1">Мгновенный индексированный поиск файлов + запуск ярлыка .lnk</p>
+        </button>
+
+        <button onclick="runScenario(1)" id="scen-btn-1" class="scenario-btn text-left p-5 rounded-2xl glass-card transition">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono uppercase px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Кейс 2 • Системный контроль</span>
+            <span class="text-xs font-mono text-emerald-400">0.12 сек</span>
+          </div>
+          <h3 class="font-bold text-lg text-white">«Что-то ноутбук шумит — проверь нагрузку и память»</h3>
+          <p class="text-sm text-slate-400 mt-1">Съем телеметрии CPU, RAM и статуса батареи через библиотеку psutil</p>
+        </button>
+
+        <button onclick="runScenario(2)" id="scen-btn-2" class="scenario-btn text-left p-5 rounded-2xl glass-card transition">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono uppercase px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300">Кейс 3 • Инклюзивный Hands-Free</span>
+            <span class="text-xs font-mono text-emerald-400">1.5 сек</span>
+          </div>
+          <h3 class="font-bold text-lg text-white">«Открой презентацию предзащиты без мыши и клавиатуры»</h3>
+          <p class="text-sm text-slate-400 mt-1">Полное голосовое управление ПК для людей с травмами рук или нарушением моторики</p>
+        </button>
+
+        <button onclick="runScenario(3)" id="scen-btn-3" class="scenario-btn text-left p-5 rounded-2xl glass-card transition">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono uppercase px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Кейс 4 • Удаленный Telegram-мост</span>
+            <span class="text-xs font-mono text-emerald-400">1.8 сек</span>
+          </div>
+          <h3 class="font-bold text-lg text-white">«Пришли сводку новостей и статус домашнего ПК в Telegram»</h3>
+          <p class="text-sm text-slate-400 mt-1">Защищенный доступ по ALLOWED_USER_ID со смартфона из любой точки</p>
+        </button>
+      </div>
+
+      <!-- Live Terminal & ReAct Visualizer (Right 7 cols) -->
+      <div class="lg:col-span-7 glass-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between border border-purple-500/30 relative overflow-hidden">
+        <!-- Top Window Bar -->
+        <div class="flex items-center justify-between pb-4 border-b border-white/10">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+            <span class="ml-3 font-mono text-xs text-slate-300">D:\Пятница\agent.py — Ollama (qwen2.5:7b-q4_K_M)</span>
+          </div>
+          <span class="text-xs font-mono px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+            <i class="fa-solid fa-lock mr-1"></i>OFFLINE ПЕСОЧНИЦА
+          </span>
+        </div>
+
+        <!-- 4-Step ReAct Pipeline Steps -->
+        <div class="my-6 space-y-4 font-mono text-sm" id="terminal-steps">
+          <!-- Step 1: STT -->
+          <div class="p-3.5 rounded-xl bg-white/5 border border-white/10">
+            <div class="text-xs text-cyan-400 font-bold mb-1">[1. ГОЛОСОВОЙ ЗАХВАТ STT / ГАРНИТУРА]</div>
+            <div id="term-step-1" class="text-slate-200">«Пятница, найди договор поставки на диске D и открой рабочую среду»</div>
+          </div>
+
+          <!-- Step 2: ReAct Reasoning -->
+          <div class="p-3.5 rounded-xl bg-purple-950/30 border border-purple-500/30">
+            <div class="text-xs text-purple-300 font-bold mb-1">[2. ЦЕПОЧКА РАССУЖДЕНИЙ &lt;think&gt; В OLLAMA]</div>
+            <div id="term-step-2" class="text-purple-200 text-xs sm:text-sm">
+              Намерение: поиск документа + запуск IDE. Вызываю последовательно 2 системных инструмента: search_files(query="договор", root_drive="D:\\") и find_and_run_app("vscode").
+            </div>
+          </div>
+
+          <!-- Step 3: Function Calling -->
+          <div class="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-500/30">
+            <div class="text-xs text-indigo-300 font-bold mb-1">[3. НАТИВНЫЙ ВЫЗОВ WINDOWS API / SUBPROCESS]</div>
+            <div id="term-step-3" class="text-emerald-300 text-xs sm:text-sm">
+              &gt; Выполнено за 0.18 сек: найден D:\Договоры_2026\Договор_поставки_Уфа.docx. Запущен ярлык Visual Studio Code.lnk
+            </div>
+          </div>
+
+          <!-- Step 4: TTS Output -->
+          <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
+            <div class="text-xs text-emerald-400 font-bold mb-1">[4. ГОЛОСОВОЙ ОТВЕТ СИНТЕЗАТОРА TTS]</div>
+            <div id="term-step-4" class="text-white font-sans font-semibold text-base">
+              «Договор поставки найден на диске D и открыт в проводнике, сэр. Среда разработки запущена и готова к работе».
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Telemetry Bar -->
+        <div class="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-slate-400">
+          <div>Трафик наружу: <strong class="text-emerald-400">0 Байт</strong></div>
+          <div>Итераций ReAct: <strong id="term-iter" class="text-cyan-400">2 / 4</strong></div>
+          <div>Сквозное время: <strong id="term-time" class="text-amber-400">1.42 сек</strong></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PROBLEM VS SOLUTION INTERACTIVE SWITCHER -->
+  <section id="comparison" class="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto reveal">
+    <div class="glass-card rounded-3xl p-8 sm:p-12 border border-white/15">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-wider text-amber-400">Почему обычные нейросети не подходят</span>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-2">
+            Облачные чат-боты vs Локальная «Пятница»
+          </h2>
+        </div>
+
+        <!-- Interactive Mode Toggle -->
+        <div class="inline-flex p-1.5 rounded-2xl bg-[#07080d] border border-white/10 self-start">
+          <button id="tab-cloud" onclick="switchComparison('cloud')" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition">
+            Облачные ИИ (ChatGPT / Copilot)
+          </button>
+          <button id="tab-friday" onclick="switchComparison('friday')" class="px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-purple-600 to-cyan-500 text-white shadow-lg transition">
+            Проект «Пятница» (Local AI)
+          </button>
+        </div>
+      </div>
+
+      <!-- Comparison Cards Grid -->
+      <div id="comparison-content" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Populated dynamically via JS, default is Friday vs Cloud side by side -->
+      </div>
+    </div>
+  </section>
+
+  <!-- BENTO GRID: WHAT IT AUTOMATES & KEY BENEFITS -->
+  <section id="features" class="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto reveal">
+    <div class="text-center max-w-3xl mx-auto mb-14">
+      <span class="px-3.5 py-1 rounded-full text-xs font-mono uppercase bg-purple-500/15 text-purple-300 border border-purple-500/30">
+        Функции и выгода простыми словами
+      </span>
+      <h2 class="text-3xl sm:text-5xl font-extrabold text-white mt-4">
+        Что именно делает программа каждый день
+      </h2>
+      <p class="text-slate-400 mt-3 text-lg">
+        Никаких сложных консолей — приложение тихо висит в системном трее Windows и экономит до 35 минут рабочего времени ежедневно.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <!-- Bento 1 (7 cols) -->
+      <div class="md:col-span-7 glass-card rounded-3xl p-8 flex flex-col justify-between relative overflow-hidden">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-400 text-xl mb-5">
+            <i class="fa-solid fa-magnifying-glass-bolt"></i>
+          </div>
+          <span class="text-xs font-mono uppercase text-purple-400">Скорость &lt; 0.2 секунды</span>
+          <h3 class="text-2xl font-extrabold text-white mt-1">Мгновенный поиск файлов и запуск программ по голосу</h3>
+          <p class="text-slate-300 mt-3 leading-relaxed">
+            Больше не нужно лазить по десяткам вложенных папок. Скажите: <em>«Пятница, открой смету за октябрь и запусти Photoshop»</em> — агент просканирует дерево ярлыков меню «Пуск» (<code class="text-cyan-300">.lnk</code>) и откроет нужный документ быстрее четверти секунды.
+          </p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-mono text-emerald-400">
+          <span><i class="fa-solid fa-shield-check mr-1.5"></i>Системные папки Windows защищены белым списком</span>
+          <span>Sandboxed</span>
+        </div>
+      </div>
+
+      <!-- Bento 2 (5 cols) -->
+      <div class="md:col-span-5 glass-card rounded-3xl p-8 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-xl mb-5">
+            <i class="fa-solid fa-microchip"></i>
+          </div>
+          <span class="text-xs font-mono uppercase text-cyan-400">Умное 4-битное сжатие Q4_K_M</span>
+          <h3 class="text-2xl font-extrabold text-white mt-1">Летает на обычном домашнем ПК</h3>
+          <p class="text-slate-300 mt-3 leading-relaxed">
+            Нейросеть ужата с 16 ГБ до компактных <strong>4,8 ГБ</strong> без потери сообразительности. Спокойно работает в фоне и не тормозит открытые программы или игры.
+          </p>
+        </div>
+        <div class="mt-6 bg-black/40 rounded-2xl p-4">
+          <div class="flex justify-between text-xs font-mono mb-1.5">
+            <span class="text-slate-400">Обычная LLM (16 ГБ)</span>
+            <span class="text-cyan-400 font-bold">Пятница (4.8 ГБ)</span>
+          </div>
+          <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden">
+            <div class="w-[30%] h-full bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento 3 (6 cols) -->
+      <div class="md:col-span-6 glass-card rounded-3xl p-8 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl mb-5">
+            <i class="fa-solid fa-universal-access"></i>
+          </div>
+          <span class="text-xs font-mono uppercase text-amber-400">Inclusive Tech • Hands-Free</span>
+          <h3 class="text-2xl font-extrabold text-white mt-1">Доступная среда для людей с нарушениями моторики</h3>
+          <p class="text-slate-300 mt-3 leading-relaxed">
+            Полноценный голосовой мост к Windows для пользователей с травмами рук, тремором или ослабленным зрением: управляйте компьютером через микрофон или наушники без касания мыши.
+          </p>
+        </div>
+      </div>
+
+      <!-- Bento 4 (6 cols) -->
+      <div class="md:col-span-6 glass-card rounded-3xl p-8 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-xl mb-5">
+            <i class="fa-brands fa-telegram"></i>
+          </div>
+          <span class="text-xs font-mono uppercase text-emerald-400">Гибридный мобильный контур</span>
+          <h3 class="text-2xl font-extrabold text-white mt-1">Личный Telegram-бот для удаленного контроля ПК</h3>
+          <p class="text-slate-300 mt-3 leading-relaxed">
+            Ушли от компьютера? Напишите своей «Пятнице» в защищенный Telegram-чат (фильтр по персональному ID), чтобы проверить статус системы или получить свежий дайджест новостей.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- B2B ROI CALCULATOR & PRICING -->
+  <section id="calculator" class="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto reveal">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+      
+      <!-- Left 7 Cols: Interactive B2B Savings Calculator -->
+      <div class="lg:col-span-7 glass-card rounded-3xl p-8 sm:p-10 border border-cyan-500/30">
+        <span class="text-xs font-mono uppercase text-cyan-400">Калькулятор выгоды для бизнеса (On-Premise)</span>
+        <h2 class="text-3xl font-extrabold text-white mt-2">
+          Сколько сэкономит компания при переходе на «Пятницу»
+        </h2>
+        <p class="text-slate-400 text-sm mt-2">
+          Передвиньте ползунок числа сотрудников, чтобы рассчитать прямую годовую экономию на зарубежных облачных подписках ($25/мес) и сохраненных часах рутины.
+        </p>
+
+        <div class="my-8">
+          <div class="flex justify-between items-end mb-3">
+            <label for="team-slider" class="text-sm font-bold text-slate-300">Количество рабочих ПК в компании:</label>
+            <span id="team-count-display" class="font-mono text-3xl font-extrabold text-cyan-400">20 ПК</span>
+          </div>
+          <input id="team-slider" type="range" min="1" max="100" value="20" class="w-full" oninput="updateCalculator(this.value)">
+          <div class="flex justify-between text-xs font-mono text-slate-500 mt-2">
+            <span>1 специалист</span>
+            <span>25 сотрудников</span>
+            <span>50 сотрудников</span>
+            <span>100 ПК (Корпорация)</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="p-5 rounded-2xl bg-purple-950/40 border border-purple-500/30">
+            <p class="text-xs text-purple-300 font-mono uppercase">Годовая экономия бюджета</p>
+            <p id="calc-money-saved" class="text-3xl sm:text-4xl font-extrabold text-white mt-1">480 000 ₽</p>
+            <p class="text-xs text-slate-400 mt-1">0 ₽ затрат на облачные API-токены</p>
+          </div>
+          <div class="p-5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30">
+            <p class="text-xs text-emerald-300 font-mono uppercase">Сэкономлено времени в год</p>
+            <p id="calc-hours-saved" class="text-3xl sm:text-4xl font-extrabold text-emerald-400 mt-1">2 800 часов</p>
+            <p class="text-xs text-slate-400 mt-1">По 35 минут в день на каждого сотрудника</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right 5 Cols: Pricing Tiers -->
+      <div class="lg:col-span-5 space-y-5">
+        <div class="glass-card rounded-3xl p-7 border border-white/15">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-mono uppercase px-3 py-1 rounded-full bg-purple-500/20 text-purple-300">B2C • Для разработчиков и ПК</span>
+            <span class="font-mono text-2xl font-extrabold text-white">790 ₽<span class="text-sm font-normal text-slate-400">/мес</span></span>
+          </div>
+          <h3 class="text-xl font-bold text-white mt-3">Подписка Пятница Pro</h3>
+          <p class="text-sm text-slate-400 mt-1">Готовый .exe клиент в трее Windows, голосовое управление Hands-Free, база плагинов и локальная память RAG.</p>
+        </div>
+
+        <div class="glass-card rounded-3xl p-7 border-2 border-amber-400/50 bg-gradient-to-br from-[#16192b] to-[#0b0d17]">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-mono uppercase px-3 py-1 rounded-full bg-amber-500/20 text-amber-300">B2B • Корпоративный On-Premise</span>
+            <span class="font-mono text-2xl font-extrabold text-amber-400">от 25 000 ₽<span class="text-sm font-normal text-slate-400">/год</span></span>
+          </div>
+          <h3 class="text-xl font-bold text-white mt-3">Защищенная лицензия (152-ФЗ)</h3>
+          <p class="text-sm text-slate-300 mt-1">Полностью закрытый контур без выхода в интернет, настройка под внутренние регламенты КБ и IT-компаний, аудит безопасности.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FINAL PITCH DECK CALL-TO-ACTION WITH QR CODE FOR JURY -->
+  <section id="pitch-qr" class="relative z-10 py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto reveal">
+    <div class="rounded-3xl bg-gradient-to-r from-[#131629] via-[#191536] to-[#0d1b2a] border-2 border-purple-500/40 p-8 sm:p-14 shadow-2xl">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        
+        <!-- Left 7 Cols: Pitch Summary & Beta Form -->
+        <div class="lg:col-span-7 space-y-6">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold uppercase tracking-wider">
+            <i class="fa-solid fa-gear"></i>
+            <span>АКСЕЛЕРАТОР 102 • ПРЕДЗАЩИТА ПРОЕКТА • Г. УФА, 2026</span>
+          </div>
+
+          <h2 class="text-3xl sm:text-5xl font-extrabold text-white leading-tight">
+            Готовы протестировать «Пятницу» на своем ПК?
+          </h2>
+
+          <p class="text-slate-300 text-lg">
+            Оставьте контакт для получения закрытой сборки прототипа (<strong>TRL 4</strong>) или отсканируйте QR-код на экране, чтобы связаться с лидером проекта в Telegram прямо сейчас.
+          </p>
+
+          <!-- Interactive Beta Request Form -->
+          <form onsubmit="submitBetaForm(event)" class="flex flex-col sm:flex-row gap-3 pt-2">
+            <input id="beta-contact-input" type="text" required placeholder="Ваш Telegram (@username) или корпоративный Email" class="flex-grow px-5 py-4 rounded-2xl bg-black/50 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400">
+            <button type="submit" class="px-8 py-4 rounded-2xl font-extrabold bg-gradient-to-r from-amber-500 to-purple-600 hover:brightness-110 text-white shadow-xl transition shrink-0">
+              Получить демо-сборку
+            </button>
+          </form>
+
+          <!-- Confirmation Toast (Hidden by default) -->
+          <div id="beta-success-msg" class="hidden p-4 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-sm font-semibold flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span>Заявка зафиксирована! Дистрибутив «Пятница MVP» и документация будут направлены вам в Telegram.</span>
+          </div>
+
+          <!-- Founder Info -->
+          <div class="pt-4 flex flex-wrap items-center gap-6 text-sm text-slate-300 border-t border-white/10">
+            <div>
+              <span class="text-slate-400 block text-xs">Лидер стартап-проекта</span>
+              <strong class="text-white text-base">Чингиз Р. (УВШЭУ)</strong>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-xs">Telegram для экспертов и B2B</span>
+              <strong class="text-cyan-400 font-mono text-base">@Chingiz_Ravilevich</strong>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-xs">Рынки НТИ</span>
+              <strong class="text-purple-300 font-mono text-base">SafeNet / TechNet</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right 5 Cols: Large Projector-Friendly QR Card -->
+        <div class="lg:col-span-5 flex justify-center">
+          <div class="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl max-w-xs w-full text-center transform hover:scale-105 transition duration-300">
+            <div class="flex items-center justify-center gap-2 text-xs font-extrabold uppercase tracking-wider text-indigo-600 mb-3">
+              <i class="fa-brands fa-telegram text-base"></i>
+              <span>Прямая связь с основателем</span>
+            </div>
+            
+            <!-- Generated Clean SVG QR Code for @Chingiz_Ravilevich -->
+            <div class="bg-slate-100 p-4 rounded-2xl border-2 border-indigo-100 mx-auto w-56 h-56 flex items-center justify-center">
+              <img 
+                src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=https://t.me/Chingiz_Ravilevich&color=0f172a&bgcolor=f1f5f9" 
+                alt="QR-код Telegram @Chingiz_Ravilevich"
+                class="w-full h-full object-contain rounded-lg"
+                onerror="this.src='https://placehold.co/240x240/0f172a/ffffff?text=TG:+@Chingiz_Ravilevich'"
+              >
+            </div>
+
+            <p class="font-extrabold text-lg text-slate-900 mt-4">@Chingiz_Ravilevich</p>
+            <p class="text-xs text-slate-500 mt-1">Наведите камеру смартфона для запуска демо и вопросов жюри</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="relative z-10 border-t border-white/10 py-8 px-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p>© 2026 Проект «Пятница» (Friday AI). Разработано в рамках «Акселератора 102» (ПУТП • УГНТУ / УВШЭУ).</p>
+      <p class="font-mono text-slate-400">Локальный ИИ • 0 Байт в облако • 152-ФЗ РФ</p>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT LOGIC & INTERACTIVITY -->
+  <script>
+    // Subtle Web-Audio UI synth via Tone.js (safe initialization on user click)
+    let synthReady = false;
+    let uiSynth = null;
+
+    async function playUiPing(freq = "C5") {
+      try {
+        if (!synthReady && typeof Tone !== "undefined") {
+          await Tone.start();
+          uiSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.01, decay: 0.15, sustain: 0, release: 0.2 }
+          }).toDestination();
+          uiSynth.volume.value = -14;
+          synthReady = true;
+        }
+        if (uiSynth) {
+          uiSynth.triggerAttackRelease(freq, "16n");
+        }
+      } catch (e) {
+        // Ignore audio errors if blocked by browser autoplay policy
+      }
+    }
+
+    // 1. Scenarios Data for the Interactive ReAct Simulator
+    const scenarios = [
+      {
+        voice: "«Пятница, найди договор поставки на диске D и открой рабочую среду»",
+        think: "Намерение: поиск документа + запуск IDE. Вызываю последовательно 2 системных инструмента: search_files(query='договор', root_drive='D:\\\\') и find_and_run_app('vscode').",
+        tool: "> Выполнено за 0.18 сек: найден D:\\Договоры_2026\\Договор_поставки_Уфа.docx. Запущен ярлык Visual Studio Code.lnk",
+        tts: "«Договор поставки найден на диске D и открыт в проводнике, сэр. Среда разработки запущена и готова к работе».",
+        iter: "2 / 4",
+        time: "1.42 сек"
+      },
+      {
+        voice: "«Пятница, что-то ноутбук шумит — проверь нагрузку процессора и память»",
+        think: "Намерение: диагностика ресурсов ПК. Вызываю системный модуль телеметрии get_system_status() через библиотеку psutil.",
+        tool: "> psutil отчет (0.12 сек): Загрузка CPU: 18.4%, Оперативная память: 46% (7.3 / 16 ГБ), Батарея: 94% (от сети).",
+        tts: "«Все показатели в норме: процессор загружен всего на 18 процентов, свободно более 8 гигабайт оперативной памяти».",
+        iter: "1 / 4",
+        time: "1.15 сек"
+      },
+      {
+        voice: "«Пятница, открой презентацию предзащиты на полном экране (режим без рук)»",
+        think: "Намерение: ассистивное голосовое управление Hands-Free. Поиск файла презентации и запуск через системный os.startfile().",
+        tool: "> Найдено за 0.14 сек: D:\\Акселератор_102\\Презентация_Пятница_Финал.pptx. Запущен показ слайдов.",
+        tts: "«Презентация для предзащиты открыта на главном экране. Желаю успешного выступления перед комиссией!»",
+        iter: "2 / 4",
+        time: "1.50 сек"
+      },
+      {
+        voice: "[Telegram @Chingiz_Ravilevich]: «Пришли краткую сводку техно-новостей и статус домашнего ПК»",
+        think: "Проверка ALLOWED_USER_ID: доступ разрешен. Вызываю агрегатор rss_news_fetcher() и проверку аптайма системы.",
+        tool: "> Собрано 3 главных дайджеста ИИ. Статус ПК: онлайн, угроз безопасности не обнаружено.",
+        tts: "«Отчет и свежая сводка новостей отправлены в ваш личный Telegram-чат».",
+        iter: "2 / 4",
+        time: "1.80 сек"
+      }
+    ];
+
+    let currentHeroDemoIndex = 0;
+
+    function runScenario(index) {
+      playUiPing("E5");
+      const s = scenarios[index];
+
+      // Highlight active scenario button
+      document.querySelectorAll('.scenario-btn').forEach((btn, idx) => {
+        if (idx === index) {
+          btn.classList.add('border-2', 'border-cyan-400', 'bg-cyan-950/20');
+        } else {
+          btn.classList.remove('border-2', 'border-cyan-400', 'bg-cyan-950/20');
+        }
+      });
+
+      // Animate Terminal Content
+      const step1 = document.getElementById('term-step-1');
+      const step2 = document.getElementById('term-step-2');
+      const step3 = document.getElementById('term-step-3');
+      const step4 = document.getElementById('term-step-4');
+
+      step1.textContent = s.voice;
+      step2.textContent = "Анализ намерения в Ollama Qwen 2.5...";
+      step3.textContent = "Ожидание вызова функции Windows API...";
+      step4.textContent = "...";
+
+      setTimeout(() => { step2.textContent = s.think; }, 220);
+      setTimeout(() => { step3.textContent = s.tool; }, 480);
+      setTimeout(() => {
+        step4.textContent = s.tts;
+        document.getElementById('term-iter').textContent = s.iter;
+        document.getElementById('term-time').textContent = s.time;
+      }, 720);
+    }
+
+    // 2. Hero Reactor Core Voice Simulation
+    function triggerQuickVoiceDemo() {
+      playUiPing("G5");
+      const statusBadge = document.getElementById('core-status-badge');
+      const actionLabel = document.getElementById('core-action-label');
+      const bars = document.querySelectorAll('#equalizer-bars .wave-bar');
+
+      statusBadge.textContent = "СЛУШАЮ МИКРОФОН...";
+      actionLabel.textContent = "Обработка в Ollama...";
+
+      // Animate equalizer bars rapidly
+      const interval = setInterval(() => {
+        bars.forEach(bar => {
+          const randomH = Math.floor(Math.random() * 42) + 8;
+          bar.style.height = randomH + "px";
+        });
+      }, 90);
+
+      currentHeroDemoIndex = (currentHeroDemoIndex + 1) % scenarios.length;
+      const chosen = scenarios[currentHeroDemoIndex];
+
+      setTimeout(() => {
+        clearInterval(interval);
+        bars.forEach((bar, i) => {
+          bar.style.height = [16, 32, 44, 24, 38, 20, 28][i] + "px";
+        });
+        statusBadge.textContent = "ЯДРО АКТИВНО • OLLAMA";
+        actionLabel.textContent = "Нажми для новой команды";
+        document.getElementById('bubble-text').textContent = chosen.voice;
+        document.getElementById('bubble-latency').textContent = chosen.time;
+        runScenario(currentHeroDemoIndex);
+      }, 1100);
+    }
+
+    // 3. Problem vs Solution Switcher
+    const comparisonData = {
+      friday: [
+        {
+          badge: "100% Приватность (152-ФЗ)",
+          title: "0 байт уходит в интернет",
+          desc: "Все договоры, исходный код и голос обрабатываются строго внутри видеокарты вашего ПК. Полная защита коммерческой тайны.",
+          color: "text-emerald-400",
+          icon: "fa-shield-halved"
+        },
+        {
+          badge: "Прямые «руки» в системе",
+          title: "Реальное управление Windows",
+          desc: "Находит файлы по всем дискам за 0.2 сек, открывает программы по ярлыкам и проверяет нагрузку железа одной фразой.",
+          color: "text-cyan-400",
+          icon: "fa-bolt"
+        },
+        {
+          badge: "Экономия бюджета",
+          title: "0 ₽ за облачные токены",
+          desc: "Никаких зарубежных подписок по $20/мес на сотрудника. Вычисления идут бесплатно на существующем оборудовании.",
+          color: "text-purple-400",
+          icon: "fa-coins"
+        }
+      ],
+      cloud: [
+        {
+          badge: "Риск штрафов до 6 млн ₽",
+          title: "48% утечек корпоративных данных",
+          desc: "Облачные боты отправляют все загруженные документы и голосовые записи на зарубежные серверы США.",
+          color: "text-rose-400",
+          icon: "fa-triangle-exclamation"
+        },
+        {
+          badge: "Заперты в окне браузера",
+          title: "Не имеют доступа к вашим папкам",
+          desc: "Обычный веб-чат не может открыть локальную папку на диске D, запустить рабочую программу или проверить ОЗУ.",
+          color: "text-amber-400",
+          icon: "fa-ban"
+        },
+        {
+          badge: "Постоянная переплата",
+          title: "$240–360 в год за каждого сотрудника",
+          desc: "Необходимость ежемесячно оплачивать зарубежные подписки и API-токены при риске блокировки аккаунтов.",
+          color: "text-rose-400",
+          icon: "fa-credit-card"
+        }
+      ]
+    };
+
+    function switchComparison(mode) {
+      playUiPing("D5");
+      const tabCloud = document.getElementById('tab-cloud');
+      const tabFriday = document.getElementById('tab-friday');
+      const container = document.getElementById('comparison-content');
+
+      if (mode === 'cloud') {
+        tabCloud.className = "px-5 py-2.5 rounded-xl text-sm font-bold bg-rose-600 text-white shadow-lg transition";
+        tabFriday.className = "px-5 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition";
+      } else {
+        tabFriday.className = "px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-purple-600 to-cyan-500 text-white shadow-lg transition";
+        tabCloud.className = "px-5 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition";
+      }
+
+      const items = comparisonData[mode];
+      container.innerHTML = items.map(item => `
+        <div class="p-6 rounded-2xl bg-black/40 border border-white/10 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-mono uppercase px-2.5 py-1 rounded bg-white/5 ${item.color}">${item.badge}</span>
+              <i class="fa-solid ${item.icon} ${item.color} text-xl"></i>
+            </div>
+            <h3 class="text-xl font-extrabold text-white">${item.title}</h3>
+            <p class="text-sm text-slate-300 mt-2 leading-relaxed">${item.desc}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 4. B2B Calculator Logic
+    function updateCalculator(pcs) {
+      const count = parseInt(pcs, 10);
+      document.getElementById('team-count-display').textContent = count + " ПК";
+      const rubSaved = count * 24000; // 24,000 RUB saved per workplace/year
+      const hoursSaved = count * 140; // ~140 hours saved per employee/year
+      document.getElementById('calc-money-saved').textContent = rubSaved.toLocaleString('ru-RU') + " ₽";
+      document.getElementById('calc-hours-saved').textContent = hoursSaved.toLocaleString('ru-RU') + " часов";
+    }
+
+    // 5. Beta Form Submission Handler
+    function submitBetaForm(e) {
+      e.preventDefault();
+      playUiPing("A5");
+      const input = document.getElementById('beta-contact-input');
+      const msg = document.getElementById('beta-success-msg');
+      if (input.value.trim() !== "") {
+        msg.classList.remove('hidden');
+        input.value = "";
+      }
+    }
+
+    // 6. Scroll Reveal Observer & Live CPU jitter
+    window.addEventListener('DOMContentLoaded', () => {
+      switchComparison('friday');
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+          }
+        });
+      }, { threshold: 0.12 });
+
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+      // Gentle HUD CPU telemetry update
+      setInterval(() => {
+        const cpuEl = document.getElementById('hud-cpu');
+        if (cpuEl) {
+          const val = Math.floor(Math.random() * 7) + 12;
+          cpuEl.textContent = val + "%";
+        }
+      }, 2500);
+    });
+  </script>
+</body>
+</html>
